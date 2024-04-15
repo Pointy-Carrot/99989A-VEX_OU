@@ -383,15 +383,16 @@ void close_elim(){
 
 
 void close_qual(){
-	chassis.setPose(36, 55, 180);
-	chassis.moveToPoint(25, 10, 1500, {.minSpeed = 120});
+	chassis.setPose(35, 55, 180);
+	chassis.moveToPoint(25, 12, 1500, {.minSpeed = 120});
 	intake = 127;
 	chassis.waitUntilDone();
-	chassis.moveToPose(40, 40, 225, 2000);
+	chassis.moveToPose(53, 52, 225, 2000, {.forwards = false, .minSpeed = 100});
 	// clearing matchload zone
 	chassis.turnToHeading(135, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.waitUntilDone();
 	rear_wing.set_value(true);
-	chassis.moveToPoint(chassis.getPose().x-4, chassis.getPose().y+4, 1000, {.forwards = false});
+	chassis.moveToPoint(chassis.getPose().x-6, chassis.getPose().y+6, 1000, {.forwards = false});
 	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
 	rear_wing.set_value(false);
@@ -400,7 +401,9 @@ void close_qual(){
 	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
 	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.moveToPoint(2, 58, 2000, {.maxSpeed = 60});
+	chassis.waitUntilDone();
+	chassis.moveToPoint(8, chassis.getPose().y, 2000, {.maxSpeed = 60});
+	intake = -127;
 }
 
 
@@ -567,7 +570,7 @@ void autonomous() {
 			break;
 		case 1:
 			// far_qual();
-			far_elim();
+			close_qual();
 			break;
 		case 2:
 			close_qual();
