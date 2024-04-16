@@ -33,6 +33,7 @@ ASSET(qual3_txt);
 ASSET(qual4_txt);
 ASSET(qual4_2_txt);
 ASSET(qual5_txt);
+ASSET(qual6_txt);
 
 /**
  * A callback function for LLEMU's center button.
@@ -340,21 +341,22 @@ void far_elim(){ // 5 triballs
 
 void close_elim(){
 	chassis.setPose(35, 55, 180);
+	// rushing middle triball
 	chassis.moveToPoint(25, 12, 1500, {.minSpeed = 120});
 	intake = 127;
 	chassis.waitUntilDone();
-	chassis.moveToPoint(38, 58, 2000, {.forwards = false, .minSpeed = 100});
+	chassis.moveToPoint(38, 50, 2000, {.forwards = false, .minSpeed = 100});
 	chassis.turnToHeading(270, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	chassis.waitUntilDone();
 	intake = -127;
 	pros::delay(300);
 	chassis.turnToHeading(180, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
-	chassis.moveToPose(6, 6, 225, 2000, {.minSpeed = 120});
+	// rushing barrier triball
+	chassis.follow(qual6_txt, 13, 2000);
 	intake = 127;
 	chassis.waitUntilDone();
-	pros::delay(200);
-	chassis.moveToPose(53, 52, 225, 2000, {.forwards = false, .minSpeed = 100});
+	chassis.moveToPose(51, 48, 225, 2000, {.forwards = false, .minSpeed = 100});
 	// clearing matchload zone
 	chassis.turnToHeading(135, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
@@ -369,12 +371,13 @@ void close_elim(){
 	chassis.waitUntilDone();
 	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
-	chassis.moveToPoint(8, chassis.getPose().y, 2000, {.maxSpeed = 60});
+	chassis.moveToPoint(7, chassis.getPose().y, 2000, {.maxSpeed = 60});
 	intake = -127;
 	chassis.waitUntilDone();
-	chassis.moveToPoint(48, chassis.getPose().y, 2000, {.forwards = false, .minSpeed = 100});
+	pros::delay(100);
+	chassis.moveToPoint(44, chassis.getPose().y, 2000, {.forwards = false});
 	chassis.waitUntilDone();
-	chassis.swingToHeading(315, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
+	chassis.swingToHeading(290, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	intake = 0;
 }
 
