@@ -278,7 +278,7 @@ void far_elim(){ // 5 triballs
 	chassis.waitUntil(58);
 	chassis.cancelMotion();
 	//returning
-	chassis.moveToPoint(-28.5, 52, 2000, {.forwards = false, .minSpeed = 100});
+	chassis.moveToPoint(-26, 50, 2000, {.forwards = false, .minSpeed = 100});
 	chassis.waitUntilDone();
 	// outtaking triball
 	chassis.swingToHeading(225, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
@@ -286,7 +286,7 @@ void far_elim(){ // 5 triballs
 	intake = -127;
 	pros::delay(200);
 	// grabbing elevation bar triball
-	chassis.turnToHeading(75, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.turnToHeading(45, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
 	chassis.setPose(-30, 56, chassis.getPose().theta);
 	intake = 127;
@@ -334,7 +334,7 @@ void far_elim(){ // 5 triballs
 	chassis.waitUntil(30);
 	intake = -127;
 	chassis.waitUntilDone();
-	chassis.moveToPoint(-90, chassis.getPose().y+6, 2000, {.minSpeed = 120});
+	chassis.moveToPoint(-90, chassis.getPose().y, 2000, {.minSpeed = 120});
 }
 
 
