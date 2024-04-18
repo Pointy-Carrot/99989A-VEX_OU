@@ -263,7 +263,7 @@ void far_qual(){ // 6 triballs
 
 void far_elim(){ // 5 triballs
 	
-	chassis.setPose(-37, 55, 180);
+	chassis.setPose(-34, 55, 180);
 
 	// rushing mid
 	intake = 127;
@@ -273,7 +273,7 @@ void far_elim(){ // 5 triballs
 	chassis.waitUntil(58);
 	chassis.cancelMotion();
 	//returning
-	chassis.moveToPoint(-26.5, 53, 2000, {.forwards = false, .minSpeed = 100});
+	chassis.moveToPoint(-24.5, 56, 2000, {.forwards = false, .minSpeed = 100});
 	chassis.waitUntilDone();
 	// outtaking triball
 	chassis.turnToHeading(240, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
@@ -281,12 +281,12 @@ void far_elim(){ // 5 triballs
 	intake = -127;
 	pros::delay(400);
 	// grabbing elevation bar triball
-	chassis.turnToHeading(0, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.turnToHeading(30, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	chassis.waitUntilDone();
 	chassis.setPose(-30, 56, chassis.getPose().theta);
 	intake = 127;
-	chassis.moveToPose(2, 58, 90, 2000, {.earlyExitRange = 2});
+	chassis.moveToPose(-2, 56, 90, 2000, {.earlyExitRange = 2});
 	chassis.waitUntilDone();
 	chassis.setPose(-5, 62, chassis.getPose().theta);
 	// returning and clearing match load zone
@@ -304,7 +304,7 @@ void far_elim(){ // 5 triballs
 	chassis.waitUntilDone();
 	chassis.setPose(-59.745, 40.512, chassis.getPose().theta);
 	pros::delay(150);
-	chassis.follow(qual4_txt, 13, 750);
+	chassis.moveToPoint(chassis.getPose().x, 0, 750, {.minSpeed = 127});
 	chassis.waitUntilDone();
 	chassis.setPose(-56, 32, chassis.getPose().theta);
 	intake = 0;
@@ -321,9 +321,8 @@ void far_elim(){ // 5 triballs
 	// chassis.follow(qual5_2_txt, 13, 2000);
 	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE, .minSpeed = 60});
 	wings.set_value(true);
-	chassis.moveToPoint(-44, -4, 2000, {.minSpeed = 127});
+	chassis.moveToPoint(-44, chassis.getPose().y-30, 10000, {.minSpeed = 127});
 	intake = -127;
-	
 }
 
 
@@ -566,7 +565,7 @@ void autonomous() {
 			prog_skills();
 			break;
 		case 1:
-			far_qual();
+			far_elim();
 			break;
 		case 2:
 			close_qual();
