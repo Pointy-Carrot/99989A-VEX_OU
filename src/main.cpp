@@ -204,35 +204,28 @@ float thetapos;
 
 void far_qual(){ // 6 triballs
 
-	chassis.setPose(0, 60, 90);
-
-	// returning and clearing match load zone
+	chassis.setPose(-6, 62, 90);
 	intake = 127;
-	pros::delay(200);
-	chassis.follow(qual1_txt, 13, 900, false);
+	pros::delay(300);
+	// returning and clearing match load zone
+	chassis.follow(qual1_txt, 13, 2250, false);
 	chassis.waitUntil(18);
 	rear_wing.set_value(true);
 	chassis.waitUntilDone();
-	chassis.turnToHeading(-75, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE, .maxSpeed = 60});
-	chassis.waitUntilDone();
 	rear_wing.set_value(false);
-	pros::delay(100);
-	chassis.turnToHeading(45, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	// pushing in triballs
-	chassis.moveToPoint(chassis.getPose().x-4, chassis.getPose().y-4, 500, {.forwards = false, .minSpeed = 60});
-	chassis.swingToHeading(0, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.moveToPoint(-58, 0, 750, {.forwards = false, .minSpeed = 120});
-	chassis.waitUntilDone();
 	chassis.setPose(-56, 38, chassis.getPose().theta);
 	chassis.moveToPoint(-54, 48, 1000);
-	chassis.turnToHeading(225, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 60});
-	chassis.waitUntilDone();
-	chassis.setPose(-59.745, 40.512, chassis.getPose().theta);
+	chassis.turnToHeading(270, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 60});
+	chassis.swingToHeading(180, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	intake = -127;
+	chassis.waitUntilDone();
+	pros::delay(300);
+	chassis.setPose(-59.745, 40.512, chassis.getPose().theta);
 	pros::delay(150);
 	chassis.follow(qual4_txt, 13, 750);
 	chassis.waitUntilDone();
-	chassis.setPose(-56, 36, chassis.getPose().theta);
+	chassis.setPose(-56, 32, chassis.getPose().theta);
 	intake = 0;
 	// grabbing next triball
 	chassis.moveToPoint(-56, 40, 1000, {.forwards = false, .minSpeed = 80});
@@ -243,7 +236,7 @@ void far_qual(){ // 6 triballs
 	pros::delay(300);
 	// scoring that triball
 	chassis.turnToPoint(-44, 4, 750, {});
-	chassis.moveToPoint(-44, 4, 1000, {.minSpeed = 120});
+	chassis.moveToPoint(-44, 10, 1000, {.minSpeed = 120});
 	intake = -127;
 	chassis.waitUntilDone();
 	chassis.setPose(-44, 16, chassis.getPose().theta);
@@ -255,7 +248,7 @@ void far_qual(){ // 6 triballs
 	chassis.waitUntilDone();
 	pros::delay(250);
 	// scoring last two triballs
-	chassis.turnToHeading(270, 500, {});
+	chassis.turnToPoint(-90, 0, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	chassis.waitUntilDone();
 	pros::delay(100);
 	wings.set_value(true);
@@ -573,8 +566,7 @@ void autonomous() {
 			prog_skills();
 			break;
 		case 1:
-			// far_qual();
-			close_elim();
+			far_qual();
 			break;
 		case 2:
 			close_qual();
