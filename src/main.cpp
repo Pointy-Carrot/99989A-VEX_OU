@@ -325,22 +325,21 @@ void far_elim(){ // 5 triballs
 	intake = -127;
 }
 
-
-
-
 void close_elim(){
-	
+
 	chassis.setPose(35, 55, 180);
 	
 	// rushing mid
-	chassis.moveToPoint(30, 26, 1500, {.minSpeed = 120});
+	chassis.moveToPoint(30, 30, 1500, {.minSpeed = 120});
 	intake = 127;
 	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	wings.set_value(true);
 	chassis.waitUntilDone();
-	chassis.moveToPoint(0, chassis.getPose().y, 750, {.minSpeed = 120});
+	chassis.moveToPoint(-2, chassis.getPose().y, 750, {.minSpeed = 120});
+	chassis.waitUntilDone();
 	intake = -127;
-	chassis.moveToPose(48, 48, 225, 2000, {.forwards = false, .minSpeed = 100});
+	pros::delay(250);
+	chassis.moveToPose(48, 52, 225, 2000, {.forwards = false, .minSpeed = 100});
 	wings.set_value(false);
 	// clearing matchload zone
 	chassis.swingToHeading(135,lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
@@ -356,7 +355,43 @@ void close_elim(){
 	chassis.waitUntilDone();
 	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
 	chassis.waitUntilDone();
-	chassis.moveToPoint(7, chassis.getPose().y+4, 2000, {.maxSpeed = 40});
+	chassis.moveToPoint(8, chassis.getPose().y+4, 2000, {.maxSpeed = 40});
+	intake = -127;
+	chassis.moveToPoint(34, chassis.getPose().y, 1000, {.forwards = false, .minSpeed = 120});
+	chassis.swingToHeading(300, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
+}
+
+
+
+void close_rush(){
+	
+	chassis.setPose(35, 55, 180);
+	
+	// rushing mid
+	chassis.moveToPoint(30, 30, 1500, {.minSpeed = 120});
+	intake = 127;
+	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
+	wings.set_value(true);
+	chassis.waitUntilDone();
+	chassis.moveToPoint(-2, chassis.getPose().y, 750, {.minSpeed = 120});
+	intake = -127;
+	chassis.moveToPose(48, 52, 225, 2000, {.forwards = false, .minSpeed = 100});
+	wings.set_value(false);
+	// clearing matchload zone
+	chassis.swingToHeading(135,lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.waitUntilDone();
+	rear_wing.set_value(true);
+	chassis.moveToPoint(chassis.getPose().x-3, chassis.getPose().y+6, 1000, {.forwards = false});
+	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.waitUntilDone();
+	rear_wing.set_value(false);
+	pros::delay(300);
+	// touching elevation pole
+	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.waitUntilDone();
+	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
+	chassis.waitUntilDone();
+	chassis.moveToPoint(6, chassis.getPose().y+4, 2000, {.maxSpeed = 40});
 	intake = -127;
 }
 
@@ -376,7 +411,7 @@ void close_qual(){
 	rear_wing.set_value(false);
 	// scoring alliance triball
 	chassis.turnToHeading(135, 500, {});
-	chassis.moveToPoint(chassis.getPose().x+12, chassis.getPose().y-12, 2000);
+	chassis.moveToPoint(chassis.getPose().x+6, chassis.getPose().y-6, 2000);
 	chassis.waitUntilDone();
 	intake = -127;
 	pros::delay(400);
@@ -386,7 +421,7 @@ void close_qual(){
 	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	chassis.waitUntilDone();
 	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.moveToPoint(23, chassis.getPose().y, 2000, {.maxSpeed = 40});
+	chassis.moveToPoint(24.5, chassis.getPose().y, 2000, {.maxSpeed = 40});
 }
 
 
@@ -553,7 +588,7 @@ void autonomous() {
 			break;
 		case 1:
 			// far_elim();
-			close_qual();
+			far_qual();
 			break;
 		case 2:
 			close_qual();
@@ -562,7 +597,7 @@ void autonomous() {
 			far_elim();
 			break;
 		case 4:
-			close_elim();
+			close_rush();
 			break;
 	}
 }
@@ -587,6 +622,7 @@ void opcontrol() {
 	bool rear_wing_activated = false;
 
 	wings.set_value(false);
+	intake = 0;
 	
 	lv_obj_t* obj = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_size(obj, 480, 240);

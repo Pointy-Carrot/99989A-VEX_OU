@@ -5,7 +5,7 @@
 //selector configuration
 #define HUE 360
 #define DEFAULT 1
-#define AUTONS "Far Qual", "Close Qual", "Far Elim", "Close Fart"
+#define AUTONS "Far Qual", "Close Qual", "Far Elim", "Close Rush"
 
 namespace selector{
 
