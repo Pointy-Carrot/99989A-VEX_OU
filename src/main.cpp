@@ -204,7 +204,7 @@ float thetapos;
 
 void far_qual(){ // 6 triballs
 
-	chassis.setPose(-6, 62, 90);
+	chassis.setPose(-6, 64, 90);
 	intake = 127;
 	pros::delay(300);
 	// returning and clearing match load zone
@@ -248,7 +248,7 @@ void far_qual(){ // 6 triballs
 	chassis.waitUntilDone();
 	pros::delay(250);
 	// scoring last two triballs
-	chassis.turnToPoint(-90, 0, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
+	chassis.turnToHeading(235, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
 	chassis.waitUntilDone();
 	pros::delay(100);
 	wings.set_value(true);
