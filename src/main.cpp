@@ -61,23 +61,17 @@ void on_center_button() {
 // Motor Setup
 
 // Pneumatics
-pros::ADIDigitalOut winch_PTO('E');
-pros::ADIDigitalOut wings('G');
-pros::ADIDigitalOut hang_release('F');
-pros::ADIDigitalOut rear_wing('D');
-pros::ADIDigitalOut ball_puncher('H');
+pros::ADIDigitalOut mogo_clamp('H');
 
 // Drivetrain
 pros::Motor left_front_motor(1, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor left_middle_motor(4, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor left_top_motor(3, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor right_front_motor(8, pros::E_MOTOR_GEARSET_06, false);
-pros::Motor right_middle_motor(9, pros::E_MOTOR_GEARSET_06, false);
-pros::Motor right_top_motor(10, pros::E_MOTOR_GEARSET_06, false);
-pros::Motor intakeL(2, pros::E_MOTOR_GEARSET_06, false);
-pros::Motor intakeR(19, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor left_kicker(11, pros::E_MOTOR_GEARSET_36, false);
-pros::Motor right_kicker(13, pros::E_MOTOR_GEARSET_36, true);
+pros::Motor left_middle_motor(12, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor left_top_motor(11, pros::E_MOTOR_GEARSET_06, false);
+pros::Motor right_front_motor(10, pros::E_MOTOR_GEARSET_06, false);
+pros::Motor right_middle_motor(19, pros::E_MOTOR_GEARSET_06, false);
+pros::Motor right_top_motor(20, pros::E_MOTOR_GEARSET_06, true);
+
+pros::Motor lift_motor(4, pros::E_MOTOR_GEARSET_36);
 
 pros::MotorGroup left_side_motors({left_front_motor, left_middle_motor, left_top_motor});
 pros::MotorGroup right_side_motors({right_front_motor, right_middle_motor, right_top_motor});
@@ -94,8 +88,18 @@ lemlib::Drivetrain drivetrain {
 
 
 // Sensors
-pros::Imu imu(7);
-lemlib::OdomSensors sensors {nullptr, nullptr, nullptr, nullptr, &imu};
+pros::Imu imu(6);
+// horizontal tracking wheel encoder
+pros::ADIEncoder horizontal_encoder('E', 'F', false);
+// vertical tracking wheel encoder
+pros::ADIEncoder vertical_encoder('A', 'B', true);
+// horizontal tracking wheel
+lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_275, -8.5);
+// vertical tracking wheel
+lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_275, 1.25);
+
+
+lemlib::OdomSensors sensors {&vertical_tracking_wheel, nullptr, &horizontal_tracking_wheel, nullptr, &imu};
 
 
 // PIDs
@@ -133,20 +137,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 // Driver Control Functions
 
-bool flywheel_running;
-float setpoint;
-float error;
-float current_velocity;
-float kp; // tune
-float ki; // tune
-float kd; // tune
-float prev_error;
-float proportional;
-float integral;
-float derivative;
-float output;
-float scaled_output;
-float integral_limit = 100; // tune
+
 bool lift_up = false;
 bool lift_down = true;
 bool lift_running = false;
@@ -177,10 +168,7 @@ void set_coast(){
 	right_front_motor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 	right_front_motor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);		
 }
-void intake(int speed){
-	intakeL = speed;
-	intakeR = speed;
-}
+
 
 // Screen View
 
@@ -206,326 +194,6 @@ float thetapos;
 
 
 
-void far_qual(){
-
-	chassis.setPose(-6, 64, 90);
-
-	intake(127);
-	pros::delay(300);
-	// returning and clearing match load zone
-	chassis.follow(qual1_txt, 13, 2250, false);
-	chassis.waitUntil(18);
-	rear_wing.set_value(true);
-	chassis.waitUntilDone();
-	rear_wing.set_value(false);
-	// pushing in triballs
-	chassis.setPose(-56, 38, chassis.getPose().theta);
-	chassis.moveToPoint(-54, 48, 1000);
-	chassis.turnToHeading(270, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 60});
-	chassis.swingToHeading(180, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.turnToHeading(180, 500, {});
-	intake(-127);
-	chassis.waitUntilDone();
-	pros::delay(300);
-	chassis.setPose(-59.745, 40.512, chassis.getPose().theta);
-	pros::delay(150);
-	chassis.follow(qual4_txt, 13, 750);
-	chassis.waitUntilDone();
-	chassis.setPose(-56, 32, chassis.getPose().theta);
-	intake(0);
-	// grabbing next triball
-	chassis.moveToPoint(-56, 40, 1000, {.forwards = false, .minSpeed = 80});
-	chassis.turnToPoint(-4, 36, 500, {});
-	chassis.moveToPoint(-24, 36, 2000, {.minSpeed = 110});
-	intake(127);
-	chassis.waitUntilDone();
-	pros::delay(300);
-	// scoring that triball
-	chassis.turnToPoint(-44, 4, 750, {});
-	chassis.moveToPoint(-44, 10, 1000, {.minSpeed = 120});
-	intake(-127);
-	chassis.waitUntilDone();
-	chassis.setPose(-44, 16, chassis.getPose().theta);
-	// grabbing second to last triball (mid)
-	chassis.moveToPoint(-20, 20, 1500, {.forwards = false});
-	chassis.turnToPoint(0, 0, 500, {});
-	chassis.moveToPose(0, 0, 120, 1000);
-	intake(127);
-	chassis.waitUntilDone();
-	pros::delay(250);
-	// scoring last two triballs
-	chassis.turnToHeading(235, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	chassis.waitUntilDone();
-	pros::delay(100);
-	wings.set_value(true);
-	intake(-127);
-	pros::delay(100);
-	chassis.moveToPoint(-90, 0, 2000, {.minSpeed = 120});
-}
-
-
-
-
-void far_elim(){
-	
-	chassis.setPose(-34, 55, 180);
-
-	// rushing mid
-	intake(127);
-	chassis.follow(qual3_txt, 13, 1500);
-	chassis.waitUntil(4);
-	ball_puncher.set_value(true);
-	chassis.waitUntil(58);
-	chassis.cancelMotion();
-	//returning
-	chassis.moveToPoint(-25.5, 58, 2000, {.forwards = false, .minSpeed = 100});
-	chassis.waitUntilDone();
-	// outtaking triball
-	chassis.turnToHeading(240, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	chassis.waitUntilDone();
-	intake(-127);
-	pros::delay(400);
-	// grabbing elevation bar triball
-	chassis.turnToHeading(30, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.setPose(-30, 56, chassis.getPose().theta);
-	intake(127);
-	chassis.moveToPose(-5, 56, 90, 2000, {.earlyExitRange = 2});
-	chassis.waitUntilDone();
-	chassis.setPose(-6, 62, chassis.getPose().theta);
-	// returning and clearing match load zone
-	chassis.follow(qual1_txt, 13, 2250, false);
-	chassis.waitUntil(18);
-	rear_wing.set_value(true);
-	chassis.waitUntilDone();
-	rear_wing.set_value(false);
-	// pushing in triballs
-	chassis.setPose(-56, 38, chassis.getPose().theta);
-	chassis.moveToPoint(-54, 48, 1000);
-	chassis.turnToHeading(270, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE, .minSpeed = 60});
-	chassis.swingToHeading(180, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	intake(-127);
-	chassis.waitUntilDone();
-	chassis.setPose(-59.745, 40.512, chassis.getPose().theta);
-	pros::delay(150);
-	chassis.moveToPoint(chassis.getPose().x, 0, 750, {.minSpeed = 127});
-	chassis.waitUntilDone();
-	chassis.setPose(-56, 32, chassis.getPose().theta);
-	intake(0);
-	// grabbing next triball
-	chassis.moveToPoint(-56, 40, 1000, {.forwards = false, .minSpeed = 80});
-	chassis.turnToPoint(-4, 36, 500, {});
-	chassis.moveToPoint(-26, 38, 2000, {.minSpeed = 110});
-	intake(127);
-	chassis.waitUntilDone();
-	pros::delay(300);
-	// scoring last two triballs
-	chassis.turnToHeading(180, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	chassis.waitUntilDone();
-	// chassis.follow(qual5_2_txt, 13, 2000);
-	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE, .minSpeed = 60});
-	wings.set_value(true);
-	chassis.moveToPoint(-44, chassis.getPose().y-40, 10000, {.minSpeed = 127});
-	intake(-127);
-}
-
-void close_elim(){
-
-		
-	chassis.setPose(35, 55, 180);
-	
-	// rushing mid
-	chassis.moveToPoint(30, 30, 1500, {.minSpeed = 120});
-	intake(127);
-	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	wings.set_value(true);
-	chassis.waitUntilDone();
-	intake(-127);
-	pros::delay(100);
-	chassis.moveToPoint(2, chassis.getPose().y, 750, {.minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(2, 12, chassis.getPose().theta);
-	chassis.moveToPose(48, 45, 225, 2000, {.forwards = false, .minSpeed = 100});
-	wings.set_value(false);
-	// clearing matchload zone
-	chassis.swingToHeading(135,lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	rear_wing.set_value(true);
-	chassis.moveToPoint(chassis.getPose().x-3, chassis.getPose().y+6, 1000, {.forwards = false});
-	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	rear_wing.set_value(false);
-	pros::delay(300);
-	// touching elevation pole
-	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.moveToPoint(8, chassis.getPose().y+4, 2000, {.maxSpeed = 40});
-	intake(-127);
-	chassis.waitUntilDone();
-	chassis.moveToPoint(chassis.getPose().x+30, chassis.getPose().y, 2000, {.forwards = false});
-	chassis.swingToHeading(300, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-}
-
-
-
-void close_rush(){
-	
-	chassis.setPose(35, 55, 180);
-	
-	// rushing mid
-	chassis.moveToPoint(30, 30, 1500, {.minSpeed = 120});
-	intake(127);
-	chassis.swingToHeading(270, lemlib::DriveSide::RIGHT, 500, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	wings.set_value(true);
-	chassis.waitUntilDone();
-	intake(-127);
-	pros::delay(100);
-	chassis.moveToPoint(2, chassis.getPose().y, 750, {.minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(2, 12, chassis.getPose().theta);
-	chassis.moveToPose(48, 45, 225, 2000, {.forwards = false, .minSpeed = 100});
-	wings.set_value(false);
-	// clearing matchload zone
-	chassis.swingToHeading(135,lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	rear_wing.set_value(true);
-	chassis.moveToPoint(chassis.getPose().x-3, chassis.getPose().y+6, 1000, {.forwards = false});
-	chassis.swingToHeading(90, lemlib::DriveSide::RIGHT, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	rear_wing.set_value(false);
-	pros::delay(300);
-	// touching elevation pole
-	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.moveToPoint(6, chassis.getPose().y+4, 2000, {.maxSpeed = 40});
-	intake(-127);
-}
-
-
-
-
-void close_qual(){
-	
-	chassis.setPose(52, 55, 180);
-
-	intake(127);
-	// clearing match load zone
-	rear_wing.set_value(true);
-	pros::delay(400);
-	chassis.turnToHeading(90, 750, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.waitUntilDone();
-	rear_wing.set_value(false);
-	// scoring alliance triball
-	chassis.turnToHeading(135, 500, {});
-	chassis.moveToPoint(chassis.getPose().x+6, chassis.getPose().y-6, 2000);
-	chassis.waitUntilDone();
-	intake(-127);
-	pros::delay(400);
-	// touching elevation pole
-	chassis.moveToPoint(chassis.getPose().x-20, chassis.getPose().y+26, 2000, {.forwards = false});
-	chassis.waitUntilDone();
-	chassis.turnToHeading(315, 750, {.direction = lemlib::AngularDirection::CW_CLOCKWISE});
-	chassis.waitUntilDone();
-	chassis.swingToHeading(270, lemlib::DriveSide::LEFT, 500, {.direction = lemlib::AngularDirection::CCW_COUNTERCLOCKWISE});
-	chassis.moveToPoint(23.5, chassis.getPose().y, 2000, {.maxSpeed = 40});
-}
-
-
-
-
-void skills_macro(){
-	chassis.setPose(45, 56, 320);
-	chassis.moveToPose(54, 20, 0, 1000, {.forwards = false, .minSpeed = 127});
-	chassis.waitUntilDone();
-	chassis.setPose(58, 30, chassis.getPose().theta);
-	pros::delay(100);
-	chassis.turnToPoint(52, 46, 750, {});
-	chassis.moveToPoint(50, 48, 1000);
-	chassis.waitUntilDone();
-	chassis.turnToPoint(0, 32, 750, {});
-	chassis.waitUntilDone();
-	chassis.moveToPoint(chassis.getPose().x+3, chassis.getPose().y-2, 750, {.forwards = false});
-	chassis.turnToPoint(0, 36, 750, {});
-	right_kicker = 88;
-	left_kicker = 88;
-}
-
-
-
-
-void prog_skills(){ // programming skills
-	skills_macro();
-	pros::delay(28000);
-	chassis.turnToPoint(44.452, 56, 750, {});
-	chassis.moveToPose(30, 56, 270, 750);
-	chassis.moveToPose(-46, 56, 270, 2000, {.minSpeed = 110});
-	right_kicker = 0;
-	left_kicker = 0;
-	chassis.moveToPose(-60, 20, 180, 2000, {.minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-58, 28, chassis.getPose().theta);
-
-	chassis.moveToPose(-46, 54, 45, 1000, {.forwards = false, .minSpeed = 90});
-	chassis.waitUntilDone();
-	chassis.turnToPoint(-68, 46, 500, {.forwards = false});
-	chassis.moveToPose(-68, 10, 0, 2000, {.forwards = false, .minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-58, 30, chassis.getPose().theta);
-	chassis.moveToPose(-46, 54, 45, 1000, {.minSpeed = 90});
-	chassis.turnToPoint(-68, 46, 750, {.forwards = false});
-	chassis.moveToPose(-68, 10, 0, 2000, {.forwards = false, .minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-58, 30, chassis.getPose().theta);
-	chassis.moveToPose(-46, 54, 45, 1000, {.minSpeed = 90});
-	chassis.turnToPoint(-68, 46, 750, {.forwards = false});
-	chassis.moveToPose(-68, 10, 0, 2000, {.forwards = false, .minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-58, 30, chassis.getPose().theta);
-
-	chassis.moveToPoint(-56, 34, 1000);
-	chassis.turnToPoint(0, 34, 750, {});
-	chassis.waitUntilDone();
-	wings.set_value(true);
-	chassis.follow(Skills3_txt, 13, 1250);
-	chassis.waitUntil(16);
-	wings.set_value(false);
-	chassis.waitUntilDone();
-	chassis.turnToPoint(-11.345, -90, 750, {});
-	chassis.waitUntilDone();
-	wings.set_value(true);
-	pros::delay(500);
-	chassis.moveToPose(-50, 12, 270, 2000, {.minSpeed = 120});
-
-	chassis.waitUntilDone();
-	wings.set_value(false);
-	chassis.setPose(-44, 16, chassis.getPose().theta);
-	chassis.moveToPoint(-10, 16, 1000, {.forwards = false});
-	chassis.waitUntilDone();
-	wings.set_value(true);
-	chassis.moveToPose(-50, 16, 270, 1250, {.minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-44, 16, chassis.getPose().theta);
-	wings.set_value(false);
-
-	chassis.moveToPoint(-10, 16, 1500, {.forwards = false});
-	chassis.turnToPoint(-6, -90, 750, {});
-	chassis.moveToPoint(-6, -30, 1250);
-	chassis.turnToPoint(-90, -30, 750, {});
-	chassis.moveToPoint(-10, -30, 1000);
-	chassis.turnToPoint(-20, 90, 750, {});
-	chassis.waitUntilDone();
-	wings.set_value(true);
-	chassis.moveToPose(-50, -4, 270, 1500, {.minSpeed = 120});
-	chassis.waitUntilDone();
-	chassis.setPose(-44, -2, chassis.getPose().theta);
-	wings.set_value(false);
-	chassis.moveToPoint(0, -2, 500, {.forwards = false});
-}
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -583,32 +251,22 @@ void autonomous() {
 	auton_started = true;
 	switch(selector::auton){
 		case -4:
-			close_elim();
 			break;
 		case -3:
-			far_elim();
 			break;
 		case -2:
-			close_qual();
 			break;
 		case -1:
-			far_qual();
 			break;
 		case 0:
-			prog_skills();
 			break;
 		case 1:
-			// far_qual();
-			far_elim();
 			break;
 		case 2:
-			close_qual();
 			break;
 		case 3:
-			far_elim();
 			break;
 		case 4:
-			close_rush();
 			break;
 	}
 }
@@ -627,13 +285,6 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-
-	bool hang_released = false;
-	bool PTO_activated = false;
-	bool rear_wing_activated = false;
-
-	wings.set_value(false);
-	intake(0);
 	
 	lv_obj_t* obj = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_size(obj, 480, 240);
@@ -662,55 +313,18 @@ void opcontrol() {
 
 		// Chassis Controls
 
-		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-			intake(127);
-		} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
-			intake(-127);
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+			lift_motor = 127;
+		} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+			lift_motor = -127;
 		} else{
-			intake(0);
-		}
-		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
-			if(!hang_released){
-				hang_release.set_value(true);
-				hang_released = true;
-			} else{
-				hang_release.set_value(false);
-				hang_released = false;
-			}
-		} else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
-			if(!PTO_activated){
-				winch_PTO.set_value(true);
-				PTO_activated = true;
-			} else{
-				winch_PTO.set_value(false);
-				PTO_activated = false;
-			}
+			lift_motor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			lift_motor = 0;
 		}
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y)){
-			wings.set_value(true);
+			mogo_clamp.set_value(true);
 		} else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
-			wings.set_value(false);
-		}
-		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
-			right_kicker = 88;
-			left_kicker = 88;
-		} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
-			right_kicker.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-			left_kicker.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-			right_kicker = 0;
-			left_kicker = 0;
-		}
-		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)){
-			skills_macro();
-		}
-		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
-			if(!rear_wing_activated){
-				rear_wing.set_value(true);
-				rear_wing_activated = true;
-			} else{
-				rear_wing.set_value(false);
-				rear_wing_activated = false;
-			}
+			mogo_clamp.set_value(false);
 		}
 		pros::delay(20);
 	}
